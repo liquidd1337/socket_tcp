@@ -79,14 +79,14 @@ fn handle_client(mut stream: TcpStream, smart_socket: &mut SmartSocket) {
     }
 }
 
-fn main() -> io::Result<()> {
+fn main() {
     let mut args = std::env::args();
     let addres = args.nth(1).expect("listener must have");
 
     let listener = TcpListener::bind(addres).unwrap();
     let mut smart_socket = SmartSocket::new("MySocket".to_string());
 
-    
+
     for conection in listener.incoming() {
         let connection = conection.unwrap();
 
