@@ -1,6 +1,6 @@
 use rand::Rng;
 use std::fmt;
-use std::io::{self, Read, Write};
+use std::io::{ Read, Write};
 use std::net::{TcpListener, TcpStream};
 
 #[derive(Debug, Clone)]
@@ -55,29 +55,31 @@ impl fmt::Display for SmartSocket {
 }
 
 fn handle_client(mut stream: TcpStream, smart_socket: &mut SmartSocket) {
-    let mut buffer = String::new();
-    while stream.read_to_string(&mut buffer).is_ok() {
-        match buffer.trim() {
-            "1" => {
-                stream.write_all(format!("{}\n", smart_socket).as_bytes());
+    let mut buffer =[0; 4];
+    while stream.read_exact(&mut buffer).is_ok() {
+        match buffer[0] {
+            1 => {
+                stream.write_all(format!("{}\n", smart_socket).as_bytes()).unwrap();
             }
-            "2" => {
+            2 => {
                 smart_socket.socket_on();
-                stream.write_all(b"Socket is turned on\n");
+                stream.write_all(b"Socket is turned on\n").unwrap();
             }
-            "3" => {
+            3 => {
                 smart_socket.socket_off();
-                stream.write_all(b"Socket is turned off\n");
+                stream.write_all(b"Socket is turned off\n").unwrap();
             }
-            "4" => {
+            4 => {
                 panic!("Exit")
             }
             _ => {
-                stream.write_all(b"Invalid command\n");
+                stream.write_all(b"Invalid command\n").unwrap();
             }
         }
     }
 }
+    
+
 
 fn main() {
     let mut args = std::env::args();

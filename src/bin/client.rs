@@ -22,7 +22,7 @@ fn main()  {
             .trim()
             .parse::<usize>()
             .expect("Неправильная команда");
-        stream.write_all(socket_operation.to_string().as_bytes()).expect("Ошибка отправки ответа на сервер");
+        stream.write_all(&socket_operation.to_le_bytes()).expect("Ошибка отправки ответа на сервер");
 
         let mut response = String::new();
         stream.read_to_string(&mut response).expect("Ошибка чтения ответа от сервера");
