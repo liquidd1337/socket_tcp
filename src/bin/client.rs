@@ -10,7 +10,7 @@ fn main()  {
         println!(
             "Выберите действие:
         1. Показать текущую информацию о розетке
-        2. Выключить рощетку
+        2. Включить рощетку
         3. Выключить розетку
         4. Выход из программы"
         );
@@ -22,17 +22,16 @@ fn main()  {
             .trim()
             .parse::<usize>()
             .expect("Неправильная команда");
-        stream.write_all(&socket_operation.to_le_bytes()).expect("Ошибка отправки ответа на сервер");
-
+        dbg!(&socket_operation);
+        stream.write_all(socket_operation.to_string().as_bytes()).expect("Ошибка отправки ответа на сервер");
+        dbg!(&stream);
+        if socket_operation == 4 {
+            println!("Exeting...");
+            break;
+        }
         let mut response = String::new();
         stream.read_to_string(&mut response).expect("Ошибка чтения ответа от сервера");
 
         println!("{}", response);
-
-        if socket_operation == 4 {
-            break;
-        }
     }
-
-
 }
