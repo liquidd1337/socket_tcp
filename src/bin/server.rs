@@ -1,5 +1,5 @@
 use rand::Rng;
-use std::fmt::{self, format};
+use std::fmt::{self};
 use std::io::{ Write, Read};
 use std::net::{TcpListener, TcpStream};
 
