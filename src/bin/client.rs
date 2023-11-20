@@ -30,7 +30,7 @@ fn main()  {
             break;
         }
 
-        let mut response = [0; 32];
+        let mut response = [0; 1024];
         stream.read(&mut response).expect("Ошибка чтения ответа от сервера");
 
         match bytes_to_string(&response) {

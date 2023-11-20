@@ -67,16 +67,16 @@ fn handle_client(mut stream: TcpStream, socket : &mut SmartSocket) {
             println!("Received request: {}", request);
 
             let response = match request.as_str() {
-                "1" => "lol",
+                "1" => socket.get_display_string(),
                 "2" => {
                     socket.socket_on();
-                    "Socket turned ON\n"
+                    "Socket turned ON\n".to_string()
                 }
                 "3" => {
                     socket.socket_off();
-                    "Socket turned OFF\n"
+                    "Socket turned OFF\n".to_string()
                 }
-                _ => "Invalid command\n"
+                _ => "Invalid command\n".to_string()
             };
 
             stream.write_all(response.as_bytes()).expect("Failed to write to client");
