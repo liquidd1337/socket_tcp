@@ -1,6 +1,6 @@
 use rand::Rng;
-use std::fmt;
-use std::io::{ Write, BufRead};
+use std::fmt::{self, format};
+use std::io::{ Write, Read};
 use std::net::{TcpListener, TcpStream};
 
 #[derive(Debug, Clone)]
@@ -40,13 +40,10 @@ impl SmartSocket {
             "off"
         }
     }
-}
 
-impl fmt::Display for SmartSocket {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(
-            f,
-            " Socket name: {}\n Status: {},\n Current power consumption: {}W ",
+    fn get_display_string(&self) -> String {
+        format!(
+            " Socket name: {} Status: {}, Current power consumption: {}W \n",
             self.name,
             self.status(),
             self.print_power_consumption(),
@@ -54,35 +51,40 @@ impl fmt::Display for SmartSocket {
     }
 }
 
-fn handle_client(stream: TcpStream, smart_socket: &mut SmartSocket) {
-    let mut stream = std::io::BufReader::new(stream);
-    dbg!(&stream);
-    let mut buffer = String::new();
-    dbg!(&buffer);
-    println!("Reading client");
-    dbg!(&buffer);
-    let command = stream.read_line(&mut buffer).unwrap();
-    println!("End reading command");
-    dbg!(&stream);
-    dbg!(command);
-        match command {
-            1 => {
-                stream.get_mut().write_all(format!("{}\n", smart_socket).as_bytes()).unwrap();
-            }
-            2 => {
-                smart_socket.socket_on();
-                stream.get_mut().write_all(b"Socket is turned on\n").unwrap();
-            }
-            3 => {
-                smart_socket.socket_off();
-                stream.get_mut().write_all(b"Socket is turned off\n").unwrap();
-            }
-            _ => {
-                stream.get_mut().write_all(b"Invalid command\n").unwrap();
-            }
+
+
+impl fmt::Display for SmartSocket {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.get_display_string())
+    }
+}
+
+fn handle_client(mut stream: TcpStream, socket : &mut SmartSocket) {
+    let mut buffer = [0; 1024];
+    while match stream.read(&mut buffer) {
+        Ok(size) if size > 0 => {
+            let request = String::from_utf8_lossy(&buffer[..size]).trim().to_string();
+            println!("Received request: {}", request);
+
+            let response = match request.as_str() {
+                "1" => "lol",
+                "2" => {
+                    socket.socket_on();
+                    "Socket turned ON\n"
+                }
+                "3" => {
+                    socket.socket_off();
+                    "Socket turned OFF\n"
+                }
+                _ => "Invalid command\n"
+            };
+
+            stream.write_all(response.as_bytes()).expect("Failed to write to client");
+
+            true
         }
-        buffer.clear();
-        dbg!(&buffer);
+        _ => false,
+    } {}
 }
 fn main() {
     let mut args = std::env::args();
@@ -92,13 +94,14 @@ fn main() {
     let mut smart_socket = SmartSocket::new("MySocket".to_string());
 
 
-    for conection in listener.incoming() {
-        let connection = conection.unwrap();
-
-        println!(
-            "Connection established with {}",
-            connection.peer_addr().unwrap()
-        );
-        handle_client(connection, &mut smart_socket)
+    for stream in listener.incoming() {
+        match stream {
+            Ok(stream) => {   
+                    handle_client(stream, &mut smart_socket); 
+            }
+            Err(e) => {
+                eprintln!("Error: {}", e);
+            }
+        }
     }
 }

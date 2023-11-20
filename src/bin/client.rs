@@ -22,16 +22,23 @@ fn main()  {
             .trim()
             .parse::<usize>()
             .expect("Неправильная команда");
-        dbg!(&socket_operation);
+      
         stream.write_all(socket_operation.to_string().as_bytes()).expect("Ошибка отправки ответа на сервер");
-        dbg!(&stream);
+
         if socket_operation == 4 {
-            println!("Exeting...");
+            println!("Выход...");
             break;
         }
-        let mut response = String::new();
-        stream.read_to_string(&mut response).expect("Ошибка чтения ответа от сервера");
 
-        println!("{}", response);
+        let mut response = [0; 32];
+        stream.read(&mut response).expect("Ошибка чтения ответа от сервера");
+
+        match bytes_to_string(&response) {
+            Ok(s) => println!("{}", s),
+            Err(e) => eprintln!("Ошибка чтения: {}", e),
+        }
     }
+}
+fn bytes_to_string(bytes: &[u8]) -> Result<String, std::string::FromUtf8Error> {
+    String::from_utf8(bytes.to_vec())
 }
