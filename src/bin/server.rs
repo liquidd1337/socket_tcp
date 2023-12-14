@@ -1,7 +1,8 @@
 use rand::Rng;
 use std::fmt::{self};
-use std::io::{ Write, Read};
-use std::net::{TcpListener, TcpStream};
+use std::io;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::{TcpListener, TcpStream};
 
 #[derive(Debug, Clone)]
 struct SmartSocket {
@@ -52,16 +53,15 @@ impl SmartSocket {
 }
 
 
-
 impl fmt::Display for SmartSocket {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.get_display_string())
     }
 }
 
-fn handle_client(mut stream: TcpStream, socket : &mut SmartSocket) {
+async fn handle_client(mut stream: TcpStream, socket: &mut SmartSocket) {
     let mut buffer = [0; 1024];
-    while match stream.read(&mut buffer) {
+    while match stream.read(&mut buffer).await {
         Ok(size) if size > 0 => {
             let request = String::from_utf8_lossy(&buffer[..size]).trim().to_string();
             println!("Received request: {}", request);
@@ -76,32 +76,38 @@ fn handle_client(mut stream: TcpStream, socket : &mut SmartSocket) {
                     socket.socket_off();
                     "Socket turned OFF\n".to_string()
                 }
-                _ => "Invalid command\n".to_string()
+                _ => "Invalid command\n".to_string(),
             };
 
-            stream.write_all(response.as_bytes()).expect("Failed to write to client");
+            stream
+                .write_all(response.as_bytes())
+                .await
+                .expect("Failed to write to client");
 
             true
         }
         _ => false,
     } {}
 }
-fn main() {
+#[tokio::main]
+async fn main() {
     let mut args = std::env::args();
-    let addres = args.nth(1).expect("listener must have");
+    let address = args.nth(1).expect("listener must have");
 
-    let listener = TcpListener::bind(addres).unwrap();
+    let listener = TcpListener::bind(address).await.unwrap();
     let mut smart_socket = SmartSocket::new("MySocket".to_string());
 
-
-    for stream in listener.incoming() {
-        match stream {
-            Ok(stream) => {   
-                    handle_client(stream, &mut smart_socket); 
+    let hdl_cl = tokio::spawn(async move {
+         match listener.accept().await {
+            
+                Ok((stream, addr)) => {
+                    handle_client(stream, &mut smart_socket).await;
+                }
+                Err(e) => {
+                    eprintln!("Error: {}", e);
+                }
             }
-            Err(e) => {
-                eprintln!("Error: {}", e);
-            }
-        }
-    }
+        
+    });
+    hdl_cl.await.unwrap();
 }

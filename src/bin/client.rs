@@ -1,11 +1,12 @@
-use std::io::{self, Read, Write};
-use std::net::TcpStream;
-
-fn main()  {
+use std::io;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::TcpStream;
+#[tokio::main]
+async fn main() {
     let mut args = std::env::args();
     let addres = args.nth(1).expect("listener must have");
 
-    let mut stream = TcpStream::connect(addres).unwrap();
+    let mut stream = TcpStream::connect(addres).await.unwrap();
     loop {
         println!(
             "Выберите действие:
@@ -16,14 +17,19 @@ fn main()  {
         );
 
         let mut socket_operation = String::new();
-        io::stdin().read_line(&mut socket_operation).expect("Ошибка чтения команды");
+        io::stdin()
+            .read_line(&mut socket_operation)
+            .expect("Ошибка чтения команды");
 
         let socket_operation = socket_operation
             .trim()
             .parse::<usize>()
             .expect("Неправильная команда");
-      
-        stream.write_all(socket_operation.to_string().as_bytes()).expect("Ошибка отправки ответа на сервер");
+
+        stream
+            .write_all(socket_operation.to_string().as_bytes())
+            .await
+            .expect("Ошибка отправки ответа на сервер");
 
         if socket_operation == 4 {
             println!("Выход...");
@@ -31,7 +37,10 @@ fn main()  {
         }
 
         let mut response = [0; 1024];
-        stream.read(&mut response).expect("Ошибка чтения ответа от сервера");
+        stream
+            .read(&mut response)
+            .await
+            .expect("Ошибка чтения ответа от сервера");
 
         match bytes_to_string(&response) {
             Ok(s) => println!("{}", s),
