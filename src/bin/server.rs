@@ -1,6 +1,5 @@
 use rand::Rng;
 use std::fmt::{self};
-use std::io;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
 
@@ -52,7 +51,6 @@ impl SmartSocket {
     }
 }
 
-
 impl fmt::Display for SmartSocket {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.get_display_string())
@@ -98,16 +96,14 @@ async fn main() {
     let mut smart_socket = SmartSocket::new("MySocket".to_string());
 
     let hdl_cl = tokio::spawn(async move {
-         match listener.accept().await {
-            
-                Ok((stream, addr)) => {
-                    handle_client(stream, &mut smart_socket).await;
-                }
-                Err(e) => {
-                    eprintln!("Error: {}", e);
-                }
+        match listener.accept().await {
+            Ok((stream, addr)) => {
+                handle_client(stream, &mut smart_socket).await;
             }
-        
+            Err(e) => {
+                eprintln!("Error: {}", e);
+            }
+        }
     });
     hdl_cl.await.unwrap();
 }
