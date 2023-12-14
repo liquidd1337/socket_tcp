@@ -97,7 +97,7 @@ async fn main() {
 
     let hdl_cl = tokio::spawn(async move {
         match listener.accept().await {
-            Ok((stream, addr)) => {
+            Ok((stream, _addr)) => {
                 handle_client(stream, &mut smart_socket).await;
             }
             Err(e) => {
